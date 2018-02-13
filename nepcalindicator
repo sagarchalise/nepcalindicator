@@ -4,7 +4,7 @@
 import sys
 #try which gir is available prioritising Gtk3
 try:
-    from gi.repository import AppIndicator3 as AppIndicator
+    from gi.repository import AyatanaAppIndicator3 as AppIndicator
 except ImportError:
     from gi.repository import AppIndicator
 from gi.repository import Gtk, GObject
@@ -27,7 +27,7 @@ import calendar
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 ### END LICENSE
 
-#  ENG_NEP_MONTHS = ('जनवरी', 'फेब्रुअरी', 'मार्च', 'अप्रिल', 'मे', 'जून', 'जुलै', 'अगस्त', 'सेप्टेम्वर', 'अक्टोबर', 'नोवेम्बर', 'डीसेम्वर')
+ENG_NEP_MONTHS = {'जनवरी': 'Jan', 'फेब्रुअरी': 'Feb', 'मार्च': 'Mar', 'अप्रिल': 'Apr', 'मे': 'May', 'जून': 'Jun', 'जुलै': 'Jul', 'अगस्त': 'Aug', 'सेप्टेम्वर': 'Sep', 'अक्टोबर': 'Oct', 'नोवेम्बर': 'Nov', 'डीसेम्वर': 'Dec'}
 NEP_MONTHS = ("बैशाख", "जेष्ठ", "असार", "श्रावण", "भाद्र", "असोज", "कार्तिक", "मंसिर", "पौष", "माघ", "फाल्गुन", "चैत्र")
 NEP_DIGITS_MAP = {'0': "०", '1': "१", '2': "२", '3': "३", '4': "४", '5': "५", '6': "६", '7': "७", '8': "८", '9': "९"}
 NEP_DAYS = ("आइतवार", "सोमवार", "मंगलवार", "बुधवार", "बिहिवार", "शुक्रवार", "शनिवार")
@@ -367,7 +367,21 @@ class NepaliDateConverter:
     @staticmethod
     def get_today_ad_label():
         return NepaliDateConverter.get_strftime(datetime.datetime.now())
-        
+
+    def get_nepali_label(self, value):
+        day, day_n, month, year = value.split()
+        l = [None, None, None, None]
+        for k, v in NEP_DAY_MAP:
+            if day.startswith(k):
+                break
+        l[2] = self.eng_to_nep_num(day_n)
+        l[0] = self.eng_to_nep_num(year)
+        for nm, em in ENG_NEP_MONTHS.items():
+            if month.startswith(em):
+                l[1] = nm
+                break
+        return ", ".join([" ".join(l[:3]), v])
+
 
 class ConverterDialog(Gtk.Dialog):
     
@@ -664,7 +678,8 @@ class ConverterDialog(Gtk.Dialog):
         upper_day = self.converter.get_total_day_of_month(year_value, month_value-1, False)
         bs_to_ad_tuple = self.converter.bs_to_ad((year_value, month_value, min(day_value, upper_day))) 
         value = self.converter.get_date_ad_label(bs_to_ad_tuple) if bs_to_ad_tuple else self.converter.get_today_ad_label()
-        self.date_label.set_markup('<span foreground="green" size="large">%s</span>' % value)
+        nep_label = self.converter.get_nepali_label(value)
+        self.date_label.set_markup('<span foreground="green" size="large">%s</span>\n<span foreground="purple" size="small">%s</span>' % (value, nep_label))
         self.nepali_cal_flowbox(today=day_value, month=month_value, year=year_value, today_ad=self.converter.date_from_tuple(bs_to_ad_tuple))
         
 class NepaliDateIndicator:
